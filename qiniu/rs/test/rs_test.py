@@ -19,6 +19,8 @@ noexist_key = 'QINIU_UNIT_TEST_NOEXIST' + r(30)
 key2 = "rs_demo_test_key_1_" + r(5)
 key3 = "rs_demo_test_key_2_" + r(5)
 key4 = "rs_demo_test_key_3_" + r(5)
+key5 = "rs_demo_test_key_3_" + r(5)
+fetch_url = "http://www.qiniu.com/index.html"
 
 class TestRs(unittest.TestCase):
 	def test_stat(self):
@@ -26,29 +28,29 @@ class TestRs(unittest.TestCase):
 		ret, err = r.stat(bucket_name, key)
 		assert err is None
 		assert ret is not None
-		
+
 		# error
 		_, err = r.stat(bucket_name, noexist_key)
 		assert err is not None
-	
+
 	def test_delete_move_copy(self):
 		r = rs.Client()
 		r.delete(bucket_name, key2)
 		r.delete(bucket_name, key3)
-		
+
 		ret, err = r.copy(bucket_name, key, bucket_name, key2)
 		assert err is None, err
-		
+
 		ret, err = r.move(bucket_name, key2, bucket_name, key3)
 		assert err is None, err
-		
+
 		ret, err = r.delete(bucket_name, key3)
 		assert err is None, err
-		
+
 		# error
 		_, err = r.delete(bucket_name, key2)
 		assert err is not None
-		
+
 		_, err = r.delete(bucket_name, key3)
 		assert err is not None
 
@@ -70,7 +72,7 @@ class TestRs(unittest.TestCase):
 		e3 = rs.EntryPath(bucket_name, key3)
 		e4 = rs.EntryPath(bucket_name, key4)
 		r.batch_delete([e2, e3, e4])
-		
+
 		# copy
 		entries = [
 			rs.EntryPathPair(e1, e2),
@@ -80,16 +82,21 @@ class TestRs(unittest.TestCase):
 		assert err is None
 		self.assertEqual(ret[0]["code"], 200)
 		self.assertEqual(ret[1]["code"], 200)
-		
+
 		ret, err = r.batch_move([rs.EntryPathPair(e2, e4)])
 		assert err is None
 		self.assertEqual(ret[0]["code"], 200)
-		
+
 		ret, err = r.batch_delete([e3, e4])
 		assert err is None
 		self.assertEqual(ret[0]["code"], 200)
-		
+
 		r.batch_delete([e2, e3, e4])
+
+	def test_fetch(self):
+		r = rs.Client()
+		ret, err = r.fetch(bucket_name, key5, fetch_url)
+		assert err is None
 
 if __name__ == "__main__":
 	unittest.main()

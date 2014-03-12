@@ -6,10 +6,13 @@ from .. import conf
 
 class Client(object):
 	conn = None
+	mac = None
 	def __init__(self, mac=None):
 		if mac is None:
-			mac = digest.Mac()
-		self.conn = digest.Client(host=conf.RS_HOST, mac=mac)
+			self.mac = digest.Mac()
+		else:
+			self.mac = mac
+		self.conn = digest.Client(host=conf.RS_HOST, mac=self.mac)
 
 	def stat(self, bucket, key):
 		return self.conn.call(uri_stat(bucket, key))
@@ -41,16 +44,20 @@ class Client(object):
 	def batch_move(self, entries):
 		ops = []
 		for entry in entries:
-			ops.append(uri_move(entry.src.bucket, entry.src.key, 
+			ops.append(uri_move(entry.src.bucket, entry.src.key,
 				entry.dest.bucket, entry.dest.key))
 		return self.batch(ops)
 
 	def batch_copy(self, entries):
 		ops = []
 		for entry in entries:
-			ops.append(uri_copy(entry.src.bucket, entry.src.key, 
+			ops.append(uri_copy(entry.src.bucket, entry.src.key,
 				entry.dest.bucket, entry.dest.key))
 		return self.batch(ops)
+
+	def fetch(self, entry, url):
+		client = digest.Client(host=conf.FETCH_HOST, mac=self.mac)
+		return client.call(uri_fetch(bucket, key))
 
 class EntryPath(object):
 	bucket = None
@@ -81,3 +88,8 @@ def uri_copy(bucket_src, key_src, bucket_dest, key_dest):
 	src = urlsafe_b64encode("%s:%s" % (bucket_src, key_src))
 	dest = urlsafe_b64encode("%s:%s" % (bucket_dest, key_dest))
 	return "/copy/%s/%s" % (src, dest)
+
+def uri_fetch(bucket, key, url):
+	enc_url = urlsafe_b64encode(url)
+	enc_entry = urlsafe_b64encode("%s:%s" % (bucket, key))
+	return "/fetch/%s/to/%s" % (enc_url, enc_entry)
